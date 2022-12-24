@@ -9,6 +9,7 @@ import torch
 from transformers import PreTrainedTokenizer, DataCollatorForSeq2Seq
 from transformers import BertTokenizer
 from typing import Dict, Optional
+import pytorch_lightning as pl
 
 
 class TextVqaDataset(Dataset):
@@ -89,6 +90,30 @@ class TextVqaDataset(Dataset):
             "answer_ids": None if answer_tensors is None else answer_tensors["input_ids"],
             "answer_atm": None if answer_tensors is None else answer_tensors["attention_mask"]
         }
+
+class TextVqaDataModule(pl.LightningDataModule):
+    def __init__(self, data_dir: str):
+        super().__init__()
+        self.data_dir = data_dir
+
+    def prepare_data(self) -> None:
+        """
+        Empty for now. Download/prep arrow files here.
+        Currently checks if some arrow files are present in self.data_dir
+        """
+        pass
+
+    def setup(self, stage: str) -> None:
+        """
+        Create and assign Dataset objects here.
+        """
+        pass
+
+    def train_dataloader(self) -> DataLoader:
+        return
+
+    def val_dataloader(self) -> DataLoader:
+        return
 
 
 if __name__ == "__main__":
