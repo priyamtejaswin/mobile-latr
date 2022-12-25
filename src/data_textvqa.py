@@ -10,6 +10,8 @@ from transformers import PreTrainedTokenizer, DataCollatorForSeq2Seq
 from transformers import BertTokenizer
 from typing import Dict, Optional
 import pytorch_lightning as pl
+import glob
+import os
 
 
 class TextVqaDataset(Dataset):
@@ -92,28 +94,56 @@ class TextVqaDataset(Dataset):
         }
 
 class TextVqaDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str, batch_size: int=32):
         super().__init__()
         self.data_dir = data_dir
+        self.done_with_setup = False
 
     def prepare_data(self) -> None:
         """
         Empty for now. Download/prep arrow files here.
         Currently checks if some arrow files are present in self.data_dir
         """
-        pass
+        matches = glob.glob(os.path.join(self.data_dir, "*.arrow"))
+        assert len(matches) > 0, f"No .arrow files found in {self.data_dir} !"
 
     def setup(self, stage: str) -> None:
         """
         Create and assign Dataset objects here.
+        Relies on "one-time" setup flag.
         """
-        pass
+        if self.done_with_setup is False:
+            tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
+            self.ds_train = TextVqaDataset(
+                path=os.path.join(self.data_dir, "textvqa_mini_train.arrow"), 
+                split="train",
+                tokenizer=tokenizer
+            )
+
+            self.ds_val = TextVqaDataset(
+                path=os.path.join(self.data_dir, "textvqa_mini_train.arrow"), 
+                split="val",
+                tokenizer=tokenizer
+            )
+
+            self.done_with_setup = True
 
     def train_dataloader(self) -> DataLoader:
-        return
+        return DataLoader(
+            self.ds_train,
+            batch_size=self.batch_size,
+            shuffle=False,
+            collate_fn=self.ds_train.collate
+        )
 
     def val_dataloader(self) -> DataLoader:
-        return
+        return DataLoader(
+            self.ds_val,
+            batch_size=self.batch_size,
+            shuffle=False,
+            collate_fn=self.ds_val.collate
+        )
 
 
 if __name__ == "__main__":
@@ -126,3 +156,5 @@ if __name__ == "__main__":
 
     for batch in train_loader:
         print(batch)
+
+    dm = TextVqaDataModule("./data")
