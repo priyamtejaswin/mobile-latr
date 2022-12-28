@@ -4,7 +4,7 @@ from transformers import BertConfig
 from transformers.models.bert.modeling_bert import BertEmbeddings
 from timm.models import vision_transformer
 import torch
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 
 class LaTrModel(pl.LightningModule):
@@ -44,7 +44,7 @@ class LaTrModel(pl.LightningModule):
         self.vocab_size = config["vocab_size"]
         self.id_sos = config["id_sos"]  # 101 for SOS, and 102 for EOS
 
-    def forward(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor | Dict[str, torch.Tensor]:
+    def forward(self, batch: Dict[str, torch.Tensor]) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
         """
         Extract question sentence embeddings.
         Extract image patch embeddings.
@@ -81,7 +81,7 @@ class LaTrModel(pl.LightningModule):
 
         return logits
 
-    def training_step(self, batch, batch_idx) -> torch.Tensor | Dict[str, torch.Tensor]:
+    def training_step(self, batch, batch_idx) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
         output = self(batch)
         loss = torch.nn.functional.cross_entropy(
             input=output.permute(0, 2, 1), 
@@ -91,7 +91,7 @@ class LaTrModel(pl.LightningModule):
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
-    def validation_step(self, batch, batch_idx) -> Optional[torch.Tensor | Dict[str, torch.Tensor]]:
+    def validation_step(self, batch, batch_idx) -> Optional[Union[torch.Tensor, Dict[str, torch.Tensor]]]:
         bs, tlen = batch["answer_ids"].size()
         target = batch["answer_ids"]
         output = torch.zeros([bs, tlen, self.vocab_size])

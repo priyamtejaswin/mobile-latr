@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 *.arrow
 logs/
+*.DS_Store
