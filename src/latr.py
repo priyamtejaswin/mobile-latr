@@ -99,14 +99,15 @@ class LaTrModel(pl.LightningModule):
 
         # Focus on everything.
         # Ignore the future tokens.
-        batch["answer_atm"] = torch.zeros_like(batch["answer_atm"]).bool()
+        # Also, push to 
+        batch["answer_atm"] = torch.zeros_like(batch["answer_atm"]).bool().to(self.device)
 
         for i in range(tlen):
             if i == 0:
                 output[:, 0, self.id_sos] = 1.0
                 generation[:, 0] = self.id_sos
             else:
-                batch["answer_ids"] = generation
+                batch["answer_ids"] = generation.to(self.device)
                 step = self(batch)
                 output[:, i] = step[:, i]
                 generation[:, i] = torch.argmax(output[:, i], dim=-1)
