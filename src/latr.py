@@ -56,7 +56,7 @@ class LaTrModel(pl.LightningModule):
         ans_embeds = self.bert_embeds(batch["answer_ids"])
 
         # TODO: confirm if the tgt_mask needs to be moved to a differnet device!
-        tgt_mask = self.edt_model.generate_square_subsequent_mask(batch["answer_ids"].size(1))
+        tgt_mask = self.edt_model.generate_square_subsequent_mask(batch["answer_ids"].size(1)).to(self.device)
         
         # TODO: add modality-type embedding to question and image
         # before concatenating embeddings!
@@ -113,7 +113,7 @@ class LaTrModel(pl.LightningModule):
                 generation[:, i] = torch.argmax(output[:, i], dim=-1)
 
         loss = torch.nn.functional.cross_entropy(
-            input=output.permute(0, 2, 1),
+            input=output.permute(0, 2, 1).to(self.device),
             target=target,
             ignore_index=0
         )

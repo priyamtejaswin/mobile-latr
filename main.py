@@ -18,13 +18,14 @@ if __name__ == "__main__":
         name=f'simple',
     )
 
-    dm = TextVqaDataModule("./data", batch_size=32, workers=4)
+    dm = TextVqaDataModule("./data", batch_size=8, workers=8)
     model = LaTrModel(config=CONFIG)
 
     trainer = pl.Trainer(
         max_epochs=5,
         logger=logger,
-        accelerator="gpu" if torch.cuda.is_available() else "cpu"
+        accelerator="gpu" if torch.cuda.is_available() else "cpu",
+        log_every_n_steps=10
     )
 
     trainer.fit(model, dm)
