@@ -1,6 +1,7 @@
 from src.data_textvqa import TextVqaDataModule
 from src.latr import LaTrModel
 import pytorch_lightning as pl
+import torch
 
 
 CONFIG = {
@@ -23,7 +24,7 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         max_epochs=5,
         logger=logger,
-        accelerator="cpu"
+        accelerator="gpu" if torch.cuda.is_available() else "cpu"
     )
 
     trainer.fit(model, dm)
