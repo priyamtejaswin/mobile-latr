@@ -61,13 +61,13 @@ class LaTrModel(pl.LightningModule):
         # TODO: add modality-type embedding to question and image
         # before concatenating embeddings!
         # <https://arxiv.org/pdf/2102.03334.pdf> -- Section 3.1
-        z_input = torch.concat([que_embeds, img_embeds], dim=1)
+        z_input = torch.concat([que_embeds, img_embeds], dim=1).to(self.device)
 
         z_mask = torch.concat(
             [batch["question_atm"].bool(), 
-             torch.zeros(img_embeds.shape[0], img_embeds.shape[1], dtype=torch.bool).to(self.device)],
+             torch.zeros(img_embeds.shape[0], img_embeds.shape[1], dtype=torch.bool)],
             dim=1
-        )
+        ).to(self.device)
 
         z_output = self.edt_model(
             src=z_input,
