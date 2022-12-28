@@ -6,7 +6,7 @@ from collections import Counter
 from torchvision.transforms import PILToTensor, Resize, Normalize
 from torchvision.transforms import InterpolationMode
 import torch
-from transformers import PreTrainedTokenizer, DataCollatorForSeq2Seq
+from transformers import PreTrainedTokenizer
 from transformers import BertTokenizer
 from typing import Dict, Optional
 import pytorch_lightning as pl
@@ -28,6 +28,7 @@ class TextVqaDataset(Dataset):
         self.transforms = torch.nn.Sequential(
             Resize([size, size], InterpolationMode.BICUBIC),
             Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            # TODO -- for TRAIN split, add random image augmentations.
         )
         self.tokenizer = tokenizer
 
@@ -88,16 +89,18 @@ class TextVqaDataset(Dataset):
         return {
             "image_tensors": image_tensors,
             "question_ids": question_tensors["input_ids"],
-            "question_atm": question_tensors["attention_mask"],
+            "question_atm": ~ question_tensors["attention_mask"].bool(),
             "answer_ids": None if answer_tensors is None else answer_tensors["input_ids"],
-            "answer_atm": None if answer_tensors is None else answer_tensors["attention_mask"]
+            "answer_atm": None if answer_tensors is None else ~ answer_tensors["attention_mask"].bool()
         }
 
 class TextVqaDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str, batch_size: int=32):
+    def __init__(self, data_dir: str, batch_size: int=32, workers: int=1):
         super().__init__()
         self.data_dir = data_dir
+        self.batch_size = batch_size
         self.done_with_setup = False
+        self.workers = workers
 
     def prepare_data(self) -> None:
         """
@@ -130,19 +133,23 @@ class TextVqaDataModule(pl.LightningDataModule):
             self.done_with_setup = True
 
     def train_dataloader(self) -> DataLoader:
+        # TODO -- change shuffling login, and check memory pinning!
         return DataLoader(
             self.ds_train,
             batch_size=self.batch_size,
             shuffle=False,
-            collate_fn=self.ds_train.collate
+            collate_fn=self.ds_train.collate,
+            num_workers=self.workers
         )
 
     def val_dataloader(self) -> DataLoader:
+        # TODO -- change shuffling login, and check memory pinning!
         return DataLoader(
             self.ds_val,
             batch_size=self.batch_size,
             shuffle=False,
-            collate_fn=self.ds_val.collate
+            collate_fn=self.ds_val.collate,
+            num_workers=self.workers
         )
 
 
