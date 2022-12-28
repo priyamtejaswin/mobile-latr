@@ -65,7 +65,7 @@ class LaTrModel(pl.LightningModule):
 
         z_mask = torch.concat(
             [batch["question_atm"].bool(), 
-             torch.zeros(img_embeds.shape[0], img_embeds.shape[1], dtype=torch.bool)],
+             torch.zeros(img_embeds.shape[0], img_embeds.shape[1], dtype=torch.bool).to(self.device)],
             dim=1
         )
 
