@@ -78,7 +78,7 @@ class TextVqaDataset(Dataset):
             if self.split != "test":
                 ans.append(row["ans_text"][0])
 
-        image_tensors = torch.concatenate(img, dim=0)
+        image_tensors = torch.concat(img, dim=0)
         question_tensors = self.tokenizer(q, return_tensors="pt", padding="longest")
 
         if self.split != "test":
