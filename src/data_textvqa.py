@@ -5,6 +5,7 @@ from PIL import Image
 from collections import Counter
 from torchvision.transforms import PILToTensor, Resize, Normalize
 from torchvision.transforms import InterpolationMode
+import torchvision.transforms.functional as tv
 import torch
 from transformers import PreTrainedTokenizer
 from transformers import BertTokenizer
@@ -13,6 +14,31 @@ import pytorch_lightning as pl
 import glob
 import os
 
+
+class MinMaxResize(torch.nn.Module):
+    def __init__(self, shorter=800, longer=1333):
+        super(MinMaxResize, self).__init__()
+        self.min = shorter
+        self.max = longer
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        _, _, w, h = x.size()
+        scale = self.min / min(w, h)
+        if h < w:
+            newh, neww = self.min, scale * w
+        else:
+            newh, neww = scale * h, self.min
+
+        if max(newh, neww) > self.max:
+            scale = self.max / max(newh, neww)
+            newh = newh * scale
+            neww = neww * scale
+
+        newh, neww = int(newh + 0.5), int(neww + 0.5)
+        newh, neww = newh // 32 * 32, neww // 32 * 32
+
+        # return x.resize((neww, newh), resample=Image.BICUBIC)
+        return tv.resize(x, [neww, newh], InterpolationMode.BICUBIC)
 
 class TextVqaDataset(Dataset):
     def __init__(self, path: str, split: str, tokenizer: PreTrainedTokenizer, size: int=384, rescale: bool=True):
@@ -26,7 +52,8 @@ class TextVqaDataset(Dataset):
 
         self.pil_to_tensor = PILToTensor()
         self.transforms = torch.nn.Sequential(
-            Resize([size, size], InterpolationMode.BICUBIC),
+            # Resize([size, size], InterpolationMode.BICUBIC),
+            MinMaxResize(shorter=384, longer=640),  # From the ViLT paper.
             Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
             # TODO -- for TRAIN split, add random image augmentations.
         )

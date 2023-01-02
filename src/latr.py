@@ -55,7 +55,6 @@ class LaTrModel(pl.LightningModule):
         img_embeds = self.vit_model.forward_features(batch["image_tensors"])
         ans_embeds = self.bert_embeds(batch["answer_ids"])
 
-        # TODO: confirm if the tgt_mask needs to be moved to a differnet device!
         tgt_mask = self.edt_model.generate_square_subsequent_mask(batch["answer_ids"].size(1)).to(self.device)
         
         # TODO: add modality-type embedding to question and image
@@ -99,7 +98,7 @@ class LaTrModel(pl.LightningModule):
 
         # Focus on everything.
         # Ignore the future tokens.
-        # Also, push to 
+        # Also, push to device!
         batch["answer_atm"] = torch.zeros_like(batch["answer_atm"]).bool().to(self.device)
 
         for i in range(tlen):

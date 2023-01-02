@@ -18,7 +18,7 @@ if __name__ == "__main__":
         name=f'simple',
     )
 
-    dm = TextVqaDataModule("./data", batch_size=8, workers=8)
+    dm = TextVqaDataModule("./data", batch_size=8)
     model = LaTrModel(config=CONFIG)
 
     trainer = pl.Trainer(
